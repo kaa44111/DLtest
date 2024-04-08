@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
+import config
 
 class CustomDataset(Dataset):
     def __init__(self, image_folder, mask_folder, transform=None):
@@ -41,3 +42,6 @@ class CustomDataset(Dataset):
 
     def extract_image_number(self, file_name):
         return int(file_name.split('.')[0])
+    
+
+# dataset = CustomDataset(config.IMAGE_DATASET_PATH,config.MASK_DATASET_PATH)
