@@ -4,6 +4,7 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 import config
+from torchvision import transforms
 
 class CustomDataset(Dataset):
     def __init__(self, image_folder, mask_folder, transform=None):
@@ -16,8 +17,8 @@ class CustomDataset(Dataset):
         self.mask_files = sorted(os.listdir(mask_folder), key=self.extract_image_number)
         
         # Überprüfen, ob die Anzahl der Dateien übereinstimmt
-        if len(self.image_files) != len(self.mask_files) / 6:
-            raise ValueError("Die Anzahl der Bilder und Masken stimmt nicht überein.")
+        # if len(self.image_files) != len(self.mask_files) / 6:
+        #     raise ValueError("Die Anzahl der Bilder und Masken stimmt nicht überein.")
         
     def __len__(self):
         return len(self.image_files)
@@ -36,12 +37,22 @@ class CustomDataset(Dataset):
             image = self.transform(image)
             masks = [self.transform(mask) for mask in masks]
         
-        # Konvertieren in Tensor und Rückgabe
-        return {'image': torch.tensor(np.array(image)).permute(2, 0, 1),
-                'masks': torch.stack([torch.tensor(np.array(mask)) for mask in masks])}
+        # # Konvertieren in Tensor und Rückgabe
+        # return {'image': torch.tensor(np.array(image)).permute(2, 0, 1),
+        #         'masks': torch.stack([torch.tensor(np.array(mask)) for mask in masks])}
+        return image
 
     def extract_image_number(self, file_name):
         return int(file_name.split('.')[0])
-    
 
-# dataset = CustomDataset(config.IMAGE_DATASET_PATH,config.MASK_DATASET_PATH)
+transformations = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
+    ])
+
+
+asdf = config.IMAGE_DATASET_PATH
+
+
+dataset = CustomDataset(config.IMAGE_DATASET_PATH,config.MASK_DATASET_PATH,transform=transformations)
+a=48
