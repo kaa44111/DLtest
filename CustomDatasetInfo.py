@@ -3,8 +3,6 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, ToTensor
 import DefineDataset
 import config
-import UNetModel
-import torch.nn as nn
 from torch.utils.data import random_split
 
 # 1. Datensatz und DataLoader erstellen
@@ -26,3 +24,20 @@ train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 # DataLoader für Trainings- und Validierungsset
 train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
+
+# Holen des nächsten Batches aus dem DataLoader
+batch = next(iter(train_loader))
+
+# Extrahieren der Bilder und Masken aus dem Batch
+images = batch['image']
+masks = batch['masks']
+
+# Drucken der Form der Bilder und Masken
+print(f"Form der Bilder: {images.shape} -> [Batch-Größe, Kanäle, Höhe, Breite]")
+print(f"Form der Masken: {masks.shape} -> [Batch-Größe, Anzahl der Masken, Höhe, Breite]")
+
+# Berechnung der Gesamtanzahl der Batches
+total_batches = len(train_loader)
+
+# Ausgabe der Gesamtanzahl der Batches
+print("Gesamtanzahl der Batches:", total_batches)
