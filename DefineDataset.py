@@ -104,8 +104,8 @@ def extract_all_tensors(dataset):
 # Anwendung der Funktion auf dein CustomDataset
 image_tensors, masks_tensors = extract_all_tensors(dataset)
 
-# Ausgabe der Anzahl der extrahierten Bild-Tensoren und Masken-Tensoren
-print("Anzahl der extrahierten Bild-Tensoren:", len(image_tensors))
-print("Anzahl der extrahierten Masken-Tensoren für jedes Bild:", len(masks_tensors))
+# # Ausgabe der Anzahl der extrahierten Bild-Tensoren und Masken-Tensoren
+# print("Anzahl der extrahierten Bild-Tensoren:", len(image_tensors))
+# print("Anzahl der extrahierten Masken-Tensoren für jedes Bild:", len(masks_tensors))
 
-print("Erster Tensor: ", image_tensors[0])
+# print("Erster Tensor: ", image_tensors[0])
