@@ -10,6 +10,24 @@ transform = Compose([ToTensor()])
 train_dataset = DefineDataset.CustomDataset(image_folder=config.IMAGE_DATASET_PATH,
                         mask_folder=config.MASK_DATASET_PATH,
                         transform=transform)
+index=0
+
+example = train_dataset[index]
+
+# Überprüfe die Art des zurückgegebenen Objekts
+print("Datentyp von 'example':", type(example))
+
+# Überprüfe die Schlüssel des zurückgegebenen Dictionaries
+print("Schlüssel des Dictionaries:", example.keys())
+
+# Überprüfe die Form der Bilddaten (Tensor)
+print("Form des Bild-Tensors:", example['image'].shape)
+
+# Überprüfe die Form der Maskendaten (Tensor)
+print("Form des Masken-Tensors:", example['masks'].shape)
+
+print("############################################################################################ \n")
+
 
 # Prozentsatz für das Trainingsset ( 80%)
 train_ratio = 0.8
@@ -33,11 +51,28 @@ images = batch['image']
 masks = batch['masks']
 
 # Drucken der Form der Bilder und Masken
-print(f"Form der Bilder: {images.shape} -> [Batch-Größe, Kanäle, Höhe, Breite]")
-print(f"Form der Masken: {masks.shape} -> [Batch-Größe, Anzahl der Masken, Höhe, Breite]")
+print(f"Form der Bilder DataLoaders: {images.shape} -> [Batch-Größe, Farb-Kanäle, Höhe, Breite]")
+print(f"Form der Masken DataLoaders: {masks.shape} -> [Batch-Größe, Anzahl der Masken, Höhe, Breite]")
 
 # Berechnung der Gesamtanzahl der Batches
 total_batches = len(train_loader)
 
 # Ausgabe der Gesamtanzahl der Batches
 print("Gesamtanzahl der Batches:", total_batches)
+
+print("############################################################################################ \n")
+# Anwendung der Funktion auf den CustomDataset
+image_tensors, masks_tensors = DefineDataset.extract_all_tensors(train_dataset)
+
+# Ausgabe der Anzahl der extrahierten Bild-Tensoren und Masken-Tensoren
+print("Anzahl der extrahierten Bild-Tensoren:", len(image_tensors))
+print("Anzahl der extrahierten Masken-Tensoren für jedes Bild:", len(masks_tensors))
+
+print("Image Tensor: ", image_tensors[0].shape)
+
+masks_tensors_for_image_0 = masks_tensors[index]
+
+# Anzeigen der Form der Maskentensoren für das Bild mit dem Index 0
+print("Form der Maskentensoren für das Bild mit Index 0:")
+for i, mask_tensor in enumerate(masks_tensors_for_image_0):
+    print(f"Maske {i+1}: {mask_tensor.shape}")

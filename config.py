@@ -7,7 +7,7 @@ DATASET_PATH = os.path.join("data", "train")
 IMAGE_DATASET_PATH = os.path.join(DATASET_PATH, "grabs")
 MASK_DATASET_PATH = os.path.join(DATASET_PATH, "masks")
 # define the test split
-TEST_SPLIT = 0.15
+TEST_SPLIT = 0.8
 # determine the device to be used for training and evaluation
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # determine if we will be pinning memory during data loading

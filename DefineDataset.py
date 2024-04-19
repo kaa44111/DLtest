@@ -52,30 +52,6 @@ class CustomDataset(Dataset):
             'masks': masks_tensor,
         }
 
-transformations = transforms.ToTensor()
-
-
-asdf = config.IMAGE_DATASET_PATH
-
-dataset = CustomDataset(image_folder=config.IMAGE_DATASET_PATH,
-                        mask_folder=config.MASK_DATASET_PATH,
-                        transform=transformations)
-
-index=0
-
-example = dataset[index]
-
-# # Überprüfe die Art des zurückgegebenen Objekts
-# print("Datentyp von 'example':", type(example))
-
-# # Überprüfe die Schlüssel des zurückgegebenen Dictionaries
-# print("Schlüssel des Dictionaries:", example.keys())
-
-# # Überprüfe die Form der Bilddaten (Tensor)
-# print("Form des Bild-Tensors:", example['image'].shape)
-
-# # Überprüfe die Form der Maskendaten (Tensor)
-# print("Form des Masken-Tensors:", example['masks'].shape)
 
 def extract_all_tensors(dataset):
     """
@@ -94,18 +70,10 @@ def extract_all_tensors(dataset):
     for index in range(len(dataset)):
         example = dataset[index]
         image_tensor = example['image']
-        masks_tensor = example['masks']
+        masks_tensor = example['masks'] # Liste von sechs Masken-Tensoren
         
         image_tensors.append(image_tensor)
         masks_tensors.append(masks_tensor)
 
     return image_tensors, masks_tensors
 
-# Anwendung der Funktion auf dein CustomDataset
-image_tensors, masks_tensors = extract_all_tensors(dataset)
-
-# # Ausgabe der Anzahl der extrahierten Bild-Tensoren und Masken-Tensoren
-# print("Anzahl der extrahierten Bild-Tensoren:", len(image_tensors))
-# print("Anzahl der extrahierten Masken-Tensoren für jedes Bild:", len(masks_tensors))
-
-# print("Erster Tensor: ", image_tensors[0])
