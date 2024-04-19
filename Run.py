@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.utils.data import random_split
 
 # 1. Datensatz und DataLoader erstellen
-transform = Compose([ToTensor()])  # Falls du Transformationen anwenden möchtest, füge sie hier hinzu
+transform = Compose([ToTensor()])  
 train_dataset = DefineDataset.CustomDataset(image_folder=config.IMAGE_DATASET_PATH,
                         mask_folder=config.MASK_DATASET_PATH,
                         transform=transform)
