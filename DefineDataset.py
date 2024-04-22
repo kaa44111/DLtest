@@ -45,8 +45,11 @@ class CustomDataset(Dataset):
             
         # Konvertieren in Tensor und Rückgabe
         image_tensor = torch.tensor(np.array(image))
-        masks_tensor = torch.stack([torch.tensor(np.array(mask)) for mask in masks])
-    
+        masks_tensor = torch.stack([torch.tensor(np.array(mask)) for mask in masks], dim=0)
+        
+        # Anpassung der Dimension der Maskentensoren
+        masks_tensor = masks_tensor.view(-1, masks_tensor.shape[-2], masks_tensor.shape[-1])
+
         return {
             'image': image_tensor,
             'masks': masks_tensor,
