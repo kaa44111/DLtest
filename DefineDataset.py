@@ -1,3 +1,4 @@
+# %%
 import os
 import numpy as np
 from PIL import Image
@@ -47,7 +48,7 @@ class CustomDataset(Dataset):
             image_patches = [self.transform(img_patch) for img_patch in image_patches]
             mask_patches = [[self.transform(mask_patch) for mask_patch in mask_set] for mask_set in mask_patches]
             
-       
+        # return image_patches, mask_patches
         # # Stapeln der Masken und Anpassen der Dimension
         mask_patches = [torch.stack(mask_set) for mask_set in mask_patches]  # Stack each set of mask patches
         masks_tensor = torch.stack(mask_patches, dim=0).squeeze(2)  # Remove unnecessary dimension
@@ -58,9 +59,11 @@ class CustomDataset(Dataset):
         }
     
     def extract_patches(self, img):
+        """ Extract patches from an image """
+        img_width, img_height = img.size
         patches = []
-        for i in range(0, img.height, self.patch_size):
-            for j in range(0, img.width, self.patch_size):
+        for i in range(0, img_height, self.patch_size):
+            for j in range(0, img_width, self.patch_size):
                 patch = img.crop((j, i, j + self.patch_size, i + self.patch_size))
                 patches.append(patch)
         return patches
@@ -118,5 +121,45 @@ def get_dataloaders():
 
     return dataloaders
 
+def visualize_image_and_patches(image_patches, mask_patches):
+    """ Visualize image and patches """
+    num_patches = len(image_patches)
+    num_mask_sets = len(mask_patches)
+    
+    plt.figure(figsize=(15, 5))
+    plt.subplot(2, num_patches + 1, 1)
+    plt.imshow(image_patches[0])  # Show the first patch as a representative of the whole image
+    plt.title('Original Image Patch')
+    plt.axis('off')
+    
+    for i, img_patch in enumerate(image_patches):
+        plt.subplot(2, num_patches + 1, i + 2)
+        plt.imshow(img_patch)
+        plt.title(f'Image Patch {i+1}')
+        plt.axis('off')
+    
+    for i in range(num_mask_sets):
+        for j, mask_patch in enumerate(mask_patches[i]):
+            plt.subplot(num_mask_sets + 1, num_patches, num_mask_sets * num_patches + j + 1)
+            plt.imshow(mask_patch, cmap='gray')
+            plt.title(f'Mask {i+1} Patch {j+1}')
+            plt.axis('off')
+    
+    plt.tight_layout()
+    plt.show()
+
+# %%
+# Annahme: dataset ist eine Instanz von CustomDataset
+transform_v2 = v2.Compose([
+    v2.ToTensor(),
+    #v2.ToDtype(torch.float32, scale=True)
+    ])
+
+train_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2)
+image_patches, mask_patches = train_dataset[0]  # Index 0 für das erste Bild im Datensatz
+#visualize_image_and_patches(image_patches, mask_patches)
 
 
+
+
+# %%
