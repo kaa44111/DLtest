@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from PIL import Image
+import torchvision.transforms.functional as TF
 import torch
 from torch.utils.data import Dataset, DataLoader
 import config
@@ -10,13 +11,13 @@ import matplotlib.pyplot as plt
 from torchvision.transforms import v2
 from torch.utils.data import random_split
 
-
 class CustomDataset(Dataset):
-    def __init__(self, image_folder, mask_folder, transform=None):
+    def __init__(self, image_folder, mask_folder, transform=None, patch_size=60):
         self.image_folder = image_folder
         self.mask_folder = mask_folder
         self.transform = transform
-        
+        self.patch_size = patch_size
+
         # Liste der Dateinamen in den Ordnern und sortieren nach Bildnummer
         self.image_files = sorted(os.listdir(image_folder), key=lambda x: int(''.join(filter(str.isdigit, x))))
         self.mask_files = sorted(os.listdir(mask_folder), key=lambda x: int(''.join(filter(str.isdigit, x))))
@@ -34,26 +35,35 @@ class CustomDataset(Dataset):
         image = Image.open(img_name).convert('RGB')  # Konvertieren zu RGB
         
         # Laden der Masken für dieses Bild
-        mask_files_for_image = self.mask_files[index * 6 : (index + 1) * 6]
-        masks = [Image.open(os.path.join(self.mask_folder, mask_file)).convert('L') for mask_file in mask_files_for_image]
+        mask_paths = self.mask_files[index * 6 : (index + 1) * 6]
+        masks = [Image.open(os.path.join(self.mask_folder, mask_file)).convert('L') for mask_file in mask_paths]
         
+        # Split image and masks into patches
+        image_patches = self.extract_patches(image)
+        mask_patches = [self.extract_patches(mask) for mask in masks]
+
         # Optional: Transformationen anwenden
         if self.transform:
-            image = self.transform(image)
-            masks = [self.transform(mask) for mask in masks]
+            image_patches = [self.transform(img_patch) for img_patch in image_patches]
+            mask_patches = [[self.transform(mask_patch) for mask_patch in mask_set] for mask_set in mask_patches]
             
        
-        # Stapeln der Masken und Anpassen der Dimension
-        masks_tensor = torch.stack(masks, dim=0)  # Erzeugt einen Tensor der Form [6, 1, 60, 60]
-
-        # Entfernen der überflüssigen Dimension (die '1' bei der Kanaldimension)
-        masks_tensor = masks_tensor.squeeze(1)  # Ändert die Form zu [6, 60, 60]
+        # # Stapeln der Masken und Anpassen der Dimension
+        mask_patches = [torch.stack(mask_set) for mask_set in mask_patches]  # Stack each set of mask patches
+        masks_tensor = torch.stack(mask_patches, dim=0).squeeze(2)  # Remove unnecessary dimension
 
         return {
-            'image': image,
+            'image': torch.stack(image_patches),
             'masks': masks_tensor,
         }
-
+    
+    def extract_patches(self, img):
+        patches = []
+        for i in range(0, img.height, self.patch_size):
+            for j in range(0, img.width, self.patch_size):
+                patch = img.crop((j, i, j + self.patch_size, i + self.patch_size))
+                patches.append(patch)
+        return patches
 
 def extract_all_tensors(dataset):
     """
