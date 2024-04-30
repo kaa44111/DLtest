@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from torchvision.transforms import v2
 from torch.utils.data import random_split
 
+# Define Dataset
+
 class CustomDataset(Dataset):
     def __init__(self, image_folder, mask_folder, transform=None, patch_size=60):
         self.image_folder = image_folder
@@ -54,9 +56,12 @@ class CustomDataset(Dataset):
         masks_tensor = torch.stack(mask_patches, dim=0).squeeze(2)  # Remove unnecessary dimension
 
         return {
-            'image': torch.stack(image_patches),
-            'masks': masks_tensor,
-        }
+        'image': {
+            'original': image,
+            'patches': torch.stack(image_patches)
+        },
+        'masks': masks_tensor,
+    }
     
     def extract_patches(self, img):
         """ Extract patches from an image """
@@ -67,6 +72,10 @@ class CustomDataset(Dataset):
                 patch = img.crop((j, i, j + self.patch_size, i + self.patch_size))
                 patches.append(patch)
         return patches
+
+
+
+# Methoden zur besseren Übersicht der Dataset 
 
 def extract_all_tensors(dataset):
     """
@@ -84,7 +93,7 @@ def extract_all_tensors(dataset):
 
     for index in range(len(dataset)):
         example = dataset[index]
-        image_tensor = example['image']
+        image_tensor = example['image']['patches']
         masks_tensor = example['masks'] # Liste von sechs Masken-Tensoren
         
         image_tensors.append(image_tensor)
@@ -120,31 +129,25 @@ def get_dataloaders():
     }
 
     return dataloaders
+# %%
+def visualize_image_and_patches(image_dict):
+    original_image = image_dict['original']
+    image_patches = image_dict['patches']
 
-def visualize_image_and_patches(image_patches, mask_patches):
-    """ Visualize image and patches """
     num_patches = len(image_patches)
-    num_mask_sets = len(mask_patches)
     
     plt.figure(figsize=(15, 5))
-    plt.subplot(2, num_patches + 1, 1)
-    plt.imshow(image_patches[0])  # Show the first patch as a representative of the whole image
-    plt.title('Original Image Patch')
+    plt.subplot(1, num_patches + 1, 1)
+    plt.imshow(original_image)  # Originalbild anzeigen
+    plt.title('Original Bild')
     plt.axis('off')
-    
-    for i, img_patch in enumerate(image_patches):
-        plt.subplot(2, num_patches + 1, i + 2)
-        plt.imshow(img_patch)
-        plt.title(f'Image Patch {i+1}')
+
+    for i in range(num_patches):
+        plt.subplot(1, num_patches + 1, i + 2)
+        plt.imshow(image_patches[i].permute(1, 2, 0))  # Umwandlung in das erwartete Format (Höhe, Breite, Kanäle)
+        plt.title(f'Bild Patch {i+1}')
         plt.axis('off')
-    
-    for i in range(num_mask_sets):
-        for j, mask_patch in enumerate(mask_patches[i]):
-            plt.subplot(num_mask_sets + 1, num_patches, num_mask_sets * num_patches + j + 1)
-            plt.imshow(mask_patch, cmap='gray')
-            plt.title(f'Mask {i+1} Patch {j+1}')
-            plt.axis('off')
-    
+
     plt.tight_layout()
     plt.show()
 
@@ -155,11 +158,9 @@ transform_v2 = v2.Compose([
     #v2.ToDtype(torch.float32, scale=True)
     ])
 
-train_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2)
-image_patches, mask_patches = train_dataset[0]  # Index 0 für das erste Bild im Datensatz
-#visualize_image_and_patches(image_patches, mask_patches)
-
-
-
+# Beispielaufruf
+train_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, patch_size=64, transform=transform_v2)
+image_patches = train_dataset[0]['image']  # Index 0 für das erste Bild im Datensatz
+visualize_image_and_patches(image_patches)
 
 # %%
