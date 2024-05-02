@@ -58,7 +58,7 @@ class CustomDataset(Dataset):
         masks_tensor = masks_tensor.squeeze(1)  # Ändert die Form zu [6, 60, 60]
 
         return {
-            'image' : image_patches, 
+            'image' : torch.stack(image_patches), 
             'masks': masks_tensor,
     }
     
@@ -161,7 +161,7 @@ transform_v2 = v2.Compose([
 # Beispielaufruf
 train_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, patch_size=64, transform=transform_v2)
 image_patches = train_dataset[0]['image']  # Index 0 für das erste Bild im Datensatz
-#visualize_image_and_patches(image_patches)
+visualize_image_and_patches(image_patches)
 # example = train_dataset[0]
 # # Überprüfe die Form der Maskendaten (Tensor)
 # print("Form des Masken-Tensors:", example['masks'].shape)
@@ -169,12 +169,12 @@ image_patches = train_dataset[0]['image']  # Index 0 für das erste Bild im Date
 #train_dataloader = get_dataloaders(patch_size=60)['train']
 
 
-train_dataloader = DataLoader(train_dataset, batch_size=9, shuffle=False)
+train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=False)
 batch = next(iter(train_dataloader))
 
 image_patches1 = batch['image']  # image_patches hat die Form (batch_size, num_patches, channels, height, width)
 first_image_patches = image_patches1[0]  # Extrahiere die ersten Patches des ersten Bildes
-#visualize_image_and_patches(first_image_patches)
+visualize_image_and_patches(first_image_patches)
 # Anzahl der Patches im DataLoader
 num_patches_dataloader = len(batch['image'][0])  # Anzahl der Patches im ersten Bild im DataLoader
 
