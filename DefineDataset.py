@@ -100,14 +100,11 @@ def extract_all_tensors(dataset):
 
     return image_tensors, masks_tensors
 
-def get_dataloaders(patch_size=60):
+def get_dataloaders(custom_dataset):
     transform_v2 = v2.Compose([
         v2.ToTensor(),
     #v2.ToDtype(torch.float32, scale=True)
     ])
-
-    # Definieren Sie Ihren CustomDataset
-    custom_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, patch_size=patch_size, transform=transform_v2)
 
     # Definieren Sie die Größen für das Training und die Validierung
     dataset_size = len(custom_dataset)
@@ -159,22 +156,20 @@ transform_v2 = v2.Compose([
     ])
 
 # Beispielaufruf
-train_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, patch_size=64, transform=transform_v2)
+train_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2, patch_size=64)
 image_patches = train_dataset[0]['image']  # Index 0 für das erste Bild im Datensatz
 visualize_image_and_patches(image_patches)
 # example = train_dataset[0]
 # # Überprüfe die Form der Maskendaten (Tensor)
 # print("Form des Masken-Tensors:", example['masks'].shape)
 
-#train_dataloader = get_dataloaders(patch_size=60)['train']
+train_dataloader = get_dataloaders(train_dataset)['val']
 
-
-train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=False)
+#train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=False)
 batch = next(iter(train_dataloader))
 
-image_patches1 = batch['image']  # image_patches hat die Form (batch_size, num_patches, channels, height, width)
-first_image_patches = image_patches1[0]  # Extrahiere die ersten Patches des ersten Bildes
-visualize_image_and_patches(first_image_patches)
+image_patches1 = batch['image'][0] # Extrahiere die ersten Patches des ersten Bildes
+visualize_image_and_patches(image_patches1)
 # Anzahl der Patches im DataLoader
 num_patches_dataloader = len(batch['image'][0])  # Anzahl der Patches im ersten Bild im DataLoader
 

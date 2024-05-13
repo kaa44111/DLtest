@@ -18,7 +18,7 @@ transform_v2 = v2.Compose([
     #v2.ToDtype(torch.float32, scale=True)
     ])
 
-train_dataset = DefineDataset.CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2)
+train_dataset = DefineDataset.CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2,patch_size=64)
 index = 0
 
 example = train_dataset[index]
@@ -30,7 +30,10 @@ print("Datentyp von 'example':", type(example))
 print("Schlüssel des Dictionaries:", example.keys())
 
 # Überprüfe die Form der Bilddaten (Tensor)
-print("Form des Bild-Tensors:", example['image'][0].shape)
+print("Form des Bild-Tensors:", example['image'].shape)
+
+# Überprüfe die Form der Bilddaten (Tensor)
+print("Form des Bild Patches-Tensors:", example['image'][0].shape)
 
 # Überprüfe die Form der Maskendaten (Tensor)
 print("Form des Masken-Tensors:", example['masks'].shape)
@@ -39,7 +42,7 @@ print("#########################################################################
 
 # %%
 
-train_dataloader = DefineDataset.get_dataloaders()['train']
+train_dataloader = DefineDataset.get_dataloaders(train_dataset)['train']
 # Holen des nächsten Batches aus dem DataLoader
 batch = next(iter(train_dataloader))
 
@@ -48,7 +51,7 @@ images = batch['image']
 masks = batch['masks']
 
 # Drucken der Form der Bilder und Masken
-print(f"Form der Bilder DataLoaders: {images[0].shape} -> [Batch-Größe, Farb-Kanäle, Höhe, Breite]")
+print(f"Form der Bilder DataLoaders: {images.shape} -> [Batch-Größe, Anzahl der Patches, Farb-Kanäle, Höhe, Breite]")
 print(f"Form der Masken DataLoaders: {masks.shape} -> [Batch-Größe, Anzahl der Masken, Höhe, Breite]")
 
 # Berechnung der Gesamtanzahl der Batches
@@ -81,18 +84,20 @@ print("_________________________________________________________________________
 # Funktion zur Visualisierung von Bild und Masken
 def show_image_and_masks(batch):
     
-    image_patches = batch['image']  # image_patches hat die Form (batch_size, num_patches, channels, height, width)
-    first_image_patches = image_patches[0]  # Extrahiere die ersten Patches des ersten Bildes
+    image_patches = batch['image'][0]  # Extrahiere die ersten Patches des ersten Bildes
     first_six_masks = batch['masks'][0]  # Extrahiere die ersten 6 Masken des ersten Bildes
 
-    # Anzeigen der ersten Patches des Bildes
+    num_patches = len(image_patches)
+
     plt.figure(figsize=(15, 5))
-    num_patches = len(first_image_patches)
+    
     for i in range(num_patches):
-        plt.subplot(1, num_patches+ 1, i + 2)
-        plt.imshow(first_image_patches[i].permute(1, 2, 0))  # Umwandlung in das erwartete Format (Höhe, Breite, Kanäle)
-        plt.title(f'Patch {i + 1}')
+        plt.subplot(1, num_patches + 1, i + 2)
+        plt.imshow(image_patches[i].permute(1, 2, 0))  # Umwandlung in das erwartete Format (Höhe, Breite, Kanäle)
+        plt.title(f'Bild Patch {i+1}')
         plt.axis('off')
+
+    plt.tight_layout()
     plt.show()
 
     # Anzeigen der ersten 6 Masken des Bildes
@@ -105,7 +110,7 @@ def show_image_and_masks(batch):
     plt.show()
 
     # Überprüfen der Anzahl der extrahierten Patches
-    print("Anzahl der extrahierten Patches:", len(first_image_patches))
+    print("Anzahl der extrahierten Patches:", image_patches.shape)
 
 show_image_and_masks(batch=batch)
 # %%
