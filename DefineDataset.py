@@ -32,7 +32,7 @@ class CustomDataset(Dataset):
     def __len__(self)-> int:
         return len(self.image_files)
     
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, int]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         # Laden des Bildes
         img_name = os.path.join(self.image_folder, self.image_files[index])
         image = Image.open(img_name).convert('RGB')  # Konvertieren zu RGB
@@ -43,31 +43,29 @@ class CustomDataset(Dataset):
         
         # Split image and masks into patches
         image_patches = self.extract_patches(image)
-        #mask_patches = [self.extract_patches(mask) for mask in masks]
 
         # Optional: Transformationen anwenden
         if self.transform:
             image_patches = [self.transform(img_patch) for img_patch in image_patches]
-            #mask_patches = [[self.transform(mask_patch) for mask_patch in mask_set] for mask_set in mask_patches]
             masks = [self.transform(mask) for mask in masks]
 
-         # Stapeln der Masken und Anpassen der Dimension
-        masks_tensor = torch.stack(masks, dim=0)  # Erzeugt einen Tensor der Form [6, 1, 60, 60]
+        # # Combine the patches into a single 4D tensor (batch_size, channels, height, width)
+        image_tensor = torch.stack(image_patches)
 
-        # Entfernen der überflüssigen Dimension (die '1' bei der Kanaldimension)
+        # Stapeln der Masken und Anpassen der Dimension
+        masks_tensor = torch.stack(masks, dim=0)  # Erzeugt einen Tensor der Form [6, 1, 60, 60]
+        #Entfernen der überflüssigen Dimension (die '1' bei der Kanaldimension)
         masks_tensor = masks_tensor.squeeze(1)  # Ändert die Form zu [6, 60, 60]
 
-        return {
-            'image' : torch.stack(image_patches), 
-            'masks': masks_tensor,
-    }
-    
-    def extract_patches(self, img):
+        return image_tensor, masks_tensor
+
+
+    def extract_patches(self, img: Image.Image) -> list:
         """ Extract patches from an image """
         img_width, img_height = img.size
         patches = []
-        for i in range(0, img_height, self.patch_size):
-            for j in range(0, img_width, self.patch_size):
+        for i in range(0, img_height - self.patch_size + 1, self.patch_size):
+            for j in range(0, img_width - self.patch_size + 1, self.patch_size):
                 patch = img.crop((j, i, j + self.patch_size, i + self.patch_size))
                 patches.append(patch)
         return patches
@@ -91,20 +89,21 @@ def extract_all_tensors(dataset):
     masks_tensors = []
 
     for index in range(len(dataset)):
-        example = dataset[index]
-        image_tensor = example['image']
-        masks_tensor = example['masks'] # Liste von sechs Masken-Tensoren
+        image_tensor,masks_tensor = dataset[index]
         
         image_tensors.append(image_tensor)
         masks_tensors.append(masks_tensor)
 
     return image_tensors, masks_tensors
 
-def get_dataloaders(custom_dataset):
+def get_dataloaders():
     transform_v2 = v2.Compose([
-        v2.ToTensor(),
-    #v2.ToDtype(torch.float32, scale=True)
+        v2.ToImage(), 
+        v2.ToDtype(torch.float32, scale=True),
+        v2.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
+
+    custom_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2,patch_size=60)
 
     # Definieren Sie die Größen für das Training und die Validierung
     dataset_size = len(custom_dataset)
@@ -127,17 +126,12 @@ def get_dataloaders(custom_dataset):
     return dataloaders
 # %%
 def visualize_image_and_patches(image_dict):
-   # original_image = image_dict['original']
-    image_patches = image_dict#['patches']
+    image_patches = image_dict
 
     num_patches = len(image_patches)
     
     plt.figure(figsize=(15, 5))
     
-    # plt.subplot(1, num_patches + 1, 1)
-    # plt.imshow(original_image)  # Originalbild anzeigen
-    # plt.title('Original Bild')
-    # plt.axis('off')
 
     for i in range(num_patches):
         plt.subplot(1, num_patches + 1, i + 2)
@@ -148,34 +142,16 @@ def visualize_image_and_patches(image_dict):
     plt.tight_layout()
     plt.show()
 
-# %%
-# Annahme: dataset ist eine Instanz von CustomDataset
 transform_v2 = v2.Compose([
-    v2.ToTensor(),
-    #v2.ToDtype(torch.float32, scale=True)
-    ])
+    v2.ToImage(), 
+    v2.ToDtype(torch.float32, scale=True),
+])
 
-# Beispielaufruf
-train_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2, patch_size=64)
-image_patches = train_dataset[0]['image']  # Index 0 für das erste Bild im Datensatz
-visualize_image_and_patches(image_patches)
-# example = train_dataset[0]
-# # Überprüfe die Form der Maskendaten (Tensor)
-# print("Form des Masken-Tensors:", example['masks'].shape)
+custom_dataset = CustomDataset(config.IMAGE_DATASET_PATH, config.MASK_DATASET_PATH, transform=transform_v2, patch_size=60)
 
-train_dataloader = get_dataloaders(train_dataset)['val']
+# Abrufen des ersten Bildes und der ersten Maske
+first_image, first_masks = custom_dataset[0]
 
-#train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=False)
-batch = next(iter(train_dataloader))
-
-image_patches1 = batch['image'][0] # Extrahiere die ersten Patches des ersten Bildes
-visualize_image_and_patches(image_patches1)
-# Anzahl der Patches im DataLoader
-num_patches_dataloader = len(batch['image'][0])  # Anzahl der Patches im ersten Bild im DataLoader
-
-# Anzahl der Patches im Dataset
-num_patches_dataset = len(train_dataset[0]['image'])  # Anzahl der Patches im ersten Bild des Datasets
-
-print("Anzahl der extrahierten Patches im DataLoader:", num_patches_dataloader)
-print("Anzahl der extrahierten Patches im Dataset:", num_patches_dataset)
-# %%
+# Anzeigen der Form der abgerufenen Tensors
+print("Erste Bildtensor-Form:", first_image.shape)
+print("Erste Maskentensor-Form:", first_masks.shape)
