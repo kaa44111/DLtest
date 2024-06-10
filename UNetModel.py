@@ -47,6 +47,10 @@ class UNet(nn.Module):
         self.outconv = nn.Conv2d(64, n_class, kernel_size=1)
 
     def forward(self, x):
+            if x.dim() == 5:
+                # Reshape from 5D to 4D
+                batch_size, num_patches, channels, height, width = x.size()
+                x = x.view(-1, channels, height, width)
         
             # Encoder
             xe11 = relu(self.e11(x))
@@ -92,4 +96,13 @@ class UNet(nn.Module):
             # Output layer
             out = self.outconv(xd42)
 
+            if x.dim() == 5:
+                # Reshape back from 4D to 5D
+                out = out.view(batch_size, num_patches, -1, out.size(2), out.size(3))
+
             return out
+    
+    def crop_and_concat(self, upsampled, bypass):
+        c = (bypass.size()[2] - upsampled.size()[2]) // 2
+        bypass = bypass[:, :, c:bypass.size()[2] - c, c:bypass.size()[3] - c]
+        return torch.cat((upsampled, bypass), 1)
